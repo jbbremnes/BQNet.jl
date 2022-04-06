@@ -1,14 +1,17 @@
-##  Bernstein quantile networks applied to Gaussian mixture data
+##  Conditional Gaussian mixture data
 
-In this example it is demonstrated how BQN can be trained on data generated from a mixture of two normal distributions and then applied to predict the distributions. The generating model is defined as
+In this example, it is demonstrated how Bernstein quantile networks can be trained on data generated from a conditional mixture of two normal distributions and then applied to predict it. The generating model is defined as
 ```
-   Normal(M, 0.25^2) + Normal(-M, 0.25^2)  where M ~ Uniform(-1, 1) 
+   Normal(μ, 0.25^2) + Normal(-μ, 0.25^2)  where μ ~ Uniform(-1, 1) 
 ```   
-with equal weights of the two components. The data is generated in two steps
-* `n = 50_000` samples from the `U(-1, 1)`
-* for each of the `n` mixture distributions generate
-  * `p = 10` ordered samples as input variables/covariates
-  * one target sample
+and the two component distributions have equal weights. The synthetic data is generated in two steps
+* 50_000 samples from the U(-1, 1) resulting in 50_000 mixture distributions
+* for each of the mixture distributions
+  * 10 ordered samples as input variables/covariates
+  * 1 sample as the target
+
+
+The Julia code is as follows
 
 ```julia
 using BQNet, Flux, Distributions, Plots
@@ -67,13 +70,15 @@ fit_cdf = cdf2(fit, xp, Float32.(yout))
 heatmap(u, yout .- 5, fit_cdf, title = "Conditional cumulative density",
         xlab = "means of mixture components = ±U(-1,1)", ylab = "target")
 
-# plot conditional pdf
-yout    = (-2:0.01:2)) .+ 5
+# plot conditional PDF
+yout    = (-2:0.01:2) .+ 5
 fit_pdf = pdf(fit, xp, yout; prob = 0:0.01:1)
 heatmap(u, yout .- 5, fit_pdf, title = "Conditional density")
 anim = @animate for i in axes(distr,2)
     plot(yout, fit_pdf[:, i], fill = true, yaxis = nothing, title = "Conditional density")
 end
 gif(anim, "bqn_mixture_normal.gif", fps = 20)
-
 ```
+
+Note that the BQN model has not been tuned. Hence, better fits should be possible by exploring other network configurations and hyper-parameters including the degree of the Bernstein polynomial.
+
