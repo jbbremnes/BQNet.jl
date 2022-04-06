@@ -104,9 +104,9 @@ A customized training loop for Bernstein quantile distribution networks with ear
          learning rate
 - `learning_rate_min::AbstractFloat=5e-6`:  the learning rate at which the training will
          be stopped
-- `patience::UInt=10`: the number of epochs with no improvement of the validation score
+- `patience::Integer=10`: the number of epochs with no improvement of the validation score
          before the learning_rate is changed
-- `max_epochs::UInt=100`: the maximum number of epochs
+- `max_epochs::Integer=100`: the maximum number of epochs
 - `best_model::Bool=true`: if true return the best model. Otherwise the last model.
 - `device::Function=cpu`: the compute device; either `cpu` or `gpu`.
 
@@ -131,7 +131,7 @@ function bqn_train!(model, tr_loader, val_loader;
                     learning_rate::AbstractFloat = 0.001,
                     learning_rate_scale::AbstractFloat = 0.1,
                     learning_rate_min::AbstractFloat = 5e-6,
-                    patience::UInt = 10, max_epochs::UInt = 100,
+                    patience::Integer = 10, max_epochs::Integer = 100,
                     best_model::Bool = true, device::Function = cpu)
 
     prob_tr    = Float32.(prob)
@@ -199,7 +199,8 @@ function bqn_train!(model, tr_loader, val_loader;
             end
         end
         @info @sprintf("%4d: quantile scores training and validation: %.5f  %.5f %s  %.3fs/%.3fs %s",
-                       i, qs_tr[i], qs_val[i], i == findmin(qs_val)[2] ? "*" : " ", tm_tr, tm_val,
+                       i, qs_tr[i], qs_val[i], i == findmin(qs_val)[2] ? "*" : " ",
+                       tm_tr, tm_val,
                        lr == "" ? lr : string("\n      new learning rate: ", lr))
         if opt.eta < learning_rate_min
             break
