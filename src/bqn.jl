@@ -16,23 +16,23 @@ Struct for information related to the training and prediction of BQNet models.
 
 # Elements
 - `model`: Flux model
-- `degree::Integer`: the degree of the Bernstein polynomials
+- `degree::UInt`: the degree of the Bernstein polynomials
 - `increasing::Bool`: if true, the output of the `model` is treated as increments
 - `training_prob::AbstractVector`: the quantile levels applied in the loss function during training
 - `training_loss::AbstractVector`: the quantile loss on the training data for each epoch
 - `validation_loss::AbstractVector`: the quantile loss on the validation data for each epoch
 - `learning_rates::AbstractVector`: the learning rate for each epoch
-- `epochs::Integer`: the total number of training epochs
+- `epochs::UInt`: the total number of training epochs
 """
 struct BQNetModel
     model
-    degree::Integer
+    degree::UInt
     increasing::Bool
     training_prob::AbstractVector
     training_loss::AbstractVector
     validation_loss::AbstractVector
     learning_rates::AbstractVector
-    epochs::Integer
+    epochs::UInt
 end
 
 import Base.show
@@ -58,7 +58,7 @@ timeit(tm::DateTime) = Dates.toms(Dates.now() - tm) / 1000
     
 
 """
-    BernsteinMatrix(degree::Integer, prob::AbstractVector)
+    BernsteinMatrix(degree::UInt, prob::AbstractVector)
 
 Compute the Bernstein basis polynomials of degree `degree` at `prob`. A matrix
 of size (levels, degree+1) is returned.
@@ -70,11 +70,12 @@ BernsteinMatrix(degree::Integer, prob::AbstractVector) =
 
 """
     bqn_train!(model, tr_loader, val_loader;
-               increasing = true, prob = Float32.(0.01:0.07:0.99), 
+               increasing::Bool = true,
+               prob::AbstractVector = Float32.(0.01:0.07:0.99), 
                learning_rate::AbstractFloat = 0.001,
                learning_rate_scale::AbstractFloat = 0.1,
                learning_rate_min::AbstractFloat = 5e-6,
-               patience::Integer = 10, max_epochs::Integer = 100,
+               patience::UInt = 10, max_epochs::UInt = 100,
                best_model::Bool = true, device::Function = cpu)
 
 A customized training loop for Bernstein quantile distribution networks with early stopping.
@@ -89,30 +90,32 @@ A customized training loop for Bernstein quantile distribution networks with ear
          of subsequent Bernstein coefficients, that is, [α0, α1-α0, α2-α1, ...].
          The quantile function can then be forced to be non-decreasing by choosing an
          activation function in the output layer that restricts all increments
-         apart from the first one to be non-negative. Note that restricting the first
+         apart from the first to be non-negative. Note that restricting the first
          Bernstein coefficient (α0) to be non-negative implies that the quantile functions
          also will be non-negative which may not be desireable. To avoid this, one option
          is to add a sufficiently large positive offset value to the target variable prior
-         to training such that positivity restriction of the first coefficient have no
-         effect. If so, remember to substract the offset value to any predicted quantile
+         to training such that the positivity constraint of the first coefficient have no
+         effect. If so, the offset value to any predicted quantile should be subtracted
          afterwards.
-- `prob::AbstractVector=Float32.(0.05:0.1:0.95)`: quantile levels for loss function
+- `prob::AbstractVector=Float32.(0.01:0.07:0.99)`: quantile levels for the quantile loss
+         function. 
 - `learning_rate::AbstractFloat=0.001`: the initial learning rate
 - `learning_rate_scale::AbstractFloat=0.1`: the scaling factor applied to change the
          learning rate
 - `learning_rate_min::AbstractFloat=5e-6`:  the learning rate at which the training will
          be stopped
-- `patience::Integer=10`: the number of epochs with no improvement of the validation score
+- `patience::UInt=10`: the number of epochs with no improvement of the validation score
          before the learning_rate is changed
-- `max_epochs::Integer=100`: the maximum number of epochs
+- `max_epochs::UInt=100`: the maximum number of epochs
 - `best_model::Bool=true`: if true return the best model. Otherwise the last model.
-- `device=cpu`: the compute device; either `cpu` or `gpu`.
+- `device::Function=cpu`: the compute device; either `cpu` or `gpu`.
 
-Return a struct of type BQNetModel. Note that `model` is updated and can be used for
-further training. The training will stop if either `max_epochs` or `learning_rate_min` is
-reached.
+Return a struct of type BQNetModel. Note that the variable `model` is updated and can be
+used for further training. The training will stop if either `max_epochs` or
+`learning_rate_min` is reached.
 
-For the moment only single marginal output (matrices) is supported.
+For the moment only vector output of the network (single univariate distribution)
+is supported.
 
 # Examples
 See ...
@@ -128,7 +131,7 @@ function bqn_train!(model, tr_loader, val_loader;
                     learning_rate::AbstractFloat = 0.001,
                     learning_rate_scale::AbstractFloat = 0.1,
                     learning_rate_min::AbstractFloat = 5e-6,
-                    patience::Integer = 10, max_epochs::Integer = 100,
+                    patience::UInt = 10, max_epochs::UInt = 100,
                     best_model::Bool = true, device::Function = cpu)
 
     prob_tr    = Float32.(prob)
@@ -208,9 +211,10 @@ function bqn_train!(model, tr_loader, val_loader;
         model = deepcopy(bmodel)
     end
 
-    return BQNetModel{Float32}(cpu(model), degree, increasing, cpu(prob_tr),
-                               qs_tr, qs_val, lrs, epochs)
+    return BQNetModel(cpu(model), degree, increasing, cpu(prob_tr),
+                      qs_tr, qs_val, lrs, epochs)
 end
+
 
 
 import Statistics: quantile
@@ -219,9 +223,9 @@ import Statistics: quantile
 
 Compute conditional quantiles for levels `prob` at `x` based on the BQN model `fit`.
 """
-function quantile(fit::BQNetModel, x; prob::AbstractVector = fit.training_prob)
-    p = Float32.(prob)
-    B = BernsteinMatrix(fit.degree, p)
+function quantile(fit::BQNetModel, x;
+                  prob::AbstractVector = fit.training_prob)
+    B = BernsteinMatrix(fit.degree, Float32.(prob))
     if fit.increasing
         B *= tril(fill(1f0, (fit.degree+1, fit.degree+1))) 
     end
@@ -270,7 +274,7 @@ end
     quantile_density(fit::BQNetModel, x; prob::AbstractVector = Float32.(0:0.01:1))
 
 Compute the conditional quantile density for levels `prob` for each `x` based on 
-the BQN model `fit`. 
+the BQN model `fit`. Quantile density is the derivative of the quantile function.
 """
 function quantile_density(fit::BQNetModel, x;
                           prob::AbstractVector = Float32.(0:0.01:1))
@@ -288,7 +292,7 @@ end
 """
     pdf(fit::BQNetModel, x, y; prob::AbstractVector = Float32.(0:0.01.1))
 
-Compute the conditional probability density function of Y|x for values `y` for each `x`
+Compute the conditional probability density function of Y|x at values `y` for each `x`
 based on the BQN model `fit`. Note that the computation relies on linear interpolation
 and its accuracy depends on the size of `prob`. `prob` should preferably include 0 and 1.
 """
