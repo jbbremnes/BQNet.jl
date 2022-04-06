@@ -4,7 +4,7 @@ BQNet.jl is a Julia package for flexible distributional regression using Bernste
 * its distribution parameters, the coefficients of the Bernstein polynomial, are linked to the input variables/covariates by a neural network
 * the model parameters, the weights and biases of the network, are estimated by optimising a composite quantile loss function.
 
-The package is based on the [Flux](https://fluxml.ai/) package.
+The package is based on the [Flux](https://fluxml.ai/).
 
 
 ##  Installation

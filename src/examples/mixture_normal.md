@@ -42,11 +42,9 @@ model  = Chain(Dense(size(x,1), 32, elu),
                Dense(32, 32, elu),
                Dense(32, degree+1, softplus)) |> device
 
-
 #  train BQNet model
 @time fit = bqn_train!(model, train_loader, val_loader,
                        increasing = true, device = cpu)
-
 
 #  make predictions of quantiles and plot
 prob_out = 0.05:0.1:0.95
@@ -70,7 +68,7 @@ heatmap(u, yout .- 5, fit_cdf, title = "Conditional cumulative density",
         xlab = "means of mixture components = ±U(-1,1)", ylab = "target")
 
 # plot conditional pdf
-yout    = Float32.(5 .+ (-2:0.01:2))
+yout    = (-2:0.01:2)) .+ 5
 fit_pdf = pdf(fit, xp, yout; prob = 0:0.01:1)
 heatmap(u, yout .- 5, fit_pdf, title = "Conditional density")
 anim = @animate for i in axes(distr,2)
