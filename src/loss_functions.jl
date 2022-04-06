@@ -28,7 +28,7 @@ Computes the Brier score
  y     observations true/false
 ```
 """
-function brier_score(prob::AbstractVector{Real}, y::AbstractVector{Integer}; agg = mean)
+function brier_score(prob::AbstractVector, y::AbstractVector; agg = mean)
      return agg( (prob .- y).^2 )
 end
 
