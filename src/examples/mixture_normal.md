@@ -1,10 +1,10 @@
-## Mixture of normal distributions
+##  Bernstein quantile networks applied to Gaussian mixture data
 
-In this example, synthetic data from a mixture of two normal distributions defined by
+In this example it is demonstrated how BQN can be trained on data generated from a mixture of two normal distributions and then applied to predict the distributions. The generating model is defined as
 ```
    Normal(M, 0.25^2) + Normal(-M, 0.25^2)  where M ~ Uniform(-1, 1) 
 ```   
-are applied to train a BQN model. The data is generated in two steps
+with equal weights of the two components. The data is generated in two steps
 * `n = 50_000` samples from the `U(-1, 1)`
 * for each of the `n` mixture distributions generate
   * `p = 10` ordered samples as input variables/covariates
