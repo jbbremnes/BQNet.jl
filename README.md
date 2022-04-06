@@ -18,11 +18,14 @@ or by entering REPL's package environment by pressing `]` and then
 add "https://github.com/jbbremnes/BQNet.jl"
 ```
 
+##  Examples
+* [conditional Gaussian mixture](https://github.com/jbbremnes/BQNet.jl/blob/main/src/examples/mixture_normal.md)
+* ...
 
-##  Background and usage
+##  Background
 ... 
 
 
 ##  References
-* [Bremnes, J. B. (2020)](https://doi.org/10.1175/MWR-D-19-0227.1). Ensemble Postprocessing Using Quantile Function Regression Based on Neural Networks and Bernstein Polynomials. Monthly Weather Review 148, 1, 403-414.
+* [Bremnes, J. B. (2020)](https://doi.org/10.1175/MWR-D-19-0227.1). Ensemble Postprocessing Using Quantile Function Regression Based on Neural Networks and Bernstein Polynomials. Monthly Weather Review 148, 1, 403-414. [R code](https://github.com/jbbremnes/bqn_mwr)
    
