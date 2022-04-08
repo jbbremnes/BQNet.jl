@@ -66,7 +66,7 @@ plot!(u, fit_qts' .- 5, color = :blue,
 
 #  plot conditional CDF
 yout    = (-2:0.01:2) .+ 5
-fit_cdf = cdf2(fit, xp, Float32.(yout))
+fit_cdf = cdf(fit, xp, Float32.(yout))
 heatmap(u, yout .- 5, fit_cdf, title = "Conditional cumulative density",
         xlab = "means of mixture components = ±U(-1,1)", ylab = "target")
 
