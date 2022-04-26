@@ -29,4 +29,4 @@ In the following examples the BQN is applied to various data
 
 ##  References
 * [Bremnes, J. B. (2020)](https://doi.org/10.1175/MWR-D-19-0227.1). Ensemble Postprocessing Using Quantile Function Regression Based on Neural Networks and Bernstein Polynomials. Monthly Weather Review 148, 1, 403-414. [R code](https://github.com/jbbremnes/bqn_mwr).
-   
+* [Schulz, B. and Lerch, S. (2022)](https://doi.org/10.1175/MWR-D-21-0150.1). Machine learning methods for postprocessing ensemble forecasts of wind gusts: A systematic comparison. Monthly Weather Review, 150 (1), 235-257. doi:10.1175/MWR-D-21-0150.1
