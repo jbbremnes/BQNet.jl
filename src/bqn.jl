@@ -177,8 +177,8 @@ function bqn_train!(model, tr_loader, val_loader;
         for (x, y) in val_loader
             x = x |> device
             y = y |> device
-            valloss += loss(x, y) * size(x)[end]
-            n       += size(x)[end]
+            valloss += loss(x, y) * size(y)[end]
+            n       += size(y)[end]
         end
         push!(qs_val, valloss / n)
         tm_val    = timeit(tm_val)
