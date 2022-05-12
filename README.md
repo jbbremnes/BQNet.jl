@@ -11,7 +11,7 @@ The package is based on [Flux](https://fluxml.ai/).
 BQNet can be installed by
 ```julia
 using Pkg
-Pkg.add("https://github.com/jbbremnes/BQNet.jl")
+Pkg.add(url = "https://github.com/jbbremnes/BQNet.jl")
 ```
 or by entering REPL's package environment by pressing `]` and then
 ```julia
