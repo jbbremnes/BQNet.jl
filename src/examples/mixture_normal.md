@@ -1,13 +1,13 @@
 ##  Conditional Gaussian mixture data
 
-In this example, it is demonstrated how Bernstein quantile networks can be trained on data generated from a conditional mixture of two normal distributions and then applied to predict it. The generating model is defined as
+In this example, it is shown how Bernstein quantile networks can be trained on data generated from a conditional mixture of two normal distributions and then applied to predict the distributions. The generating model is defined as
 ```
-   Normal(μ, 0.25^2) + Normal(-μ, 0.25^2)  where μ ~ Uniform(-1, 1) 
+   Normal(μ, 0.25^2) + Normal(-μ, 0.25^2)
 ```   
-and the two component distributions have equal weights. The synthetic data is generated in two steps
-* 50_000 samples from the U(-1, 1) resulting in 50_000 mixture distributions
-* for each of the mixture distributions
-  * 10 ordered samples as input variables/covariates
+where μ ~ Uniform(-1, 1) and the two component distributions are assumed to have equal weights. The synthetic data is generated in two steps
+* 50_000 samples from the Uniform(-1, 1) to define the component means and thereby 50_000 mixture distributions
+* for each mixture distribution
+  * 10 samples are generated, ordered and assumed to be 10 input variables/covariates
   * 1 sample as the target
 
 
@@ -29,7 +29,7 @@ end
 
 #  create data
 n, p = 50_000, 10
-x, y = create_data(n=n, p=p)
+x, y = create_data(n = n, p = p)
 y    = y .+ 5f0                  # add an offset for constraining the quantile function
 
 #  create data loaders
