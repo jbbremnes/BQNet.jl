@@ -10,7 +10,7 @@ The synthetic data is generated in two steps
 * 50_000 samples from the Uniform(-1, 1) to define the component means and thereby 50_000 mixture distributions
 * for each mixture distribution
   * 10 samples are generated, ordered and assumed to be 10 input variables/covariates
-  * 1 sample generated as target variable
+  * 1 sample is generated as target variable
 
 
 The Julia code is as follows
