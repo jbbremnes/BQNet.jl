@@ -2,7 +2,7 @@
 
 In this example, it is shown how Bernstein quantile networks can be trained on data generated from a conditional mixture of two normal distributions and then applied to predict the distributions. The generating model is defined as
 ```
-   Normal(μ, 0.25^2)/2 + Normal(-μ, 0.25^2)/2
+    Normal(μ, 0.25^2)/2 + Normal(-μ, 0.25^2)/2 
 ```   
 where μ ~ Uniform(-1, 1). 
 
