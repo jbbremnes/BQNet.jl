@@ -35,10 +35,10 @@ x, y = create_data(n = n, p = p)
 y    = y .+ 5f0                  # add an offset for constraining the quantile function
 
 #  create data loaders
-ktr  = rand(Bernoulli(0.9), n)   # ~90% training data, ~10% for validation
+ktr  = rand(Bernoulli(0.9), n)   # ~90% training data => ~10% for validation
 train_loader = Flux.Data.DataLoader((x[:, ktr], y[ktr]), batchsize = 500,
                                     shuffle = true, partial = false)
-val_loader   = Flux.Data.DataLoader((x[:, .!ktr], y[.!ktr]), batchsize = 1)
+val_loader   = Flux.Data.DataLoader((x[:, .!ktr], y[.!ktr]), batchsize = length(.!ktr))
 
 #  create model
 device = cpu
