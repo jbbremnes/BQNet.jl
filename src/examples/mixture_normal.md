@@ -49,8 +49,7 @@ model  = Chain(Dense(size(x,1), 32, elu),
                Dense(32, degree+1, softplus)) |> device
 
 #  train BQNet model
-@time fit = bqn_train!(model, train_loader, val_loader,
-                       increasing = true, device = cpu)
+@time fit = bqn_train!(model, train_loader, val_loader, increasing = true, device = device)
 
 #  make predictions of quantiles and plot
 prob_out = 0.05:0.1:0.95
