@@ -17,6 +17,19 @@ function qtloss(qt::AbstractMatrix, y::AbstractVector, prob::AbstractVector; agg
     return agg( (prob' .- (err .< 0)) .* err )
 end
 
+function qtloss(qt::AbstractArray{T,4}, y::AbstractArray{T,4}, prob::AbstractVector{T}; agg = mean) where T<:Real
+    err  = y .- qt
+    prob = reshape(prob, 1, 1, :, 1)
+    agg((prob .- (err .< 0)) .* err)
+end
+
+function qtloss(qt::AbstractArray{T,5}, y::AbstractArray{T,5}, prob::AbstractVector{T}; agg = mean) where T<:Real
+    err  = y .- qt
+    prob = reshape(prob, 1, 1, 1, :, 1)
+    agg((prob .- (err .< 0)) .* err)
+end
+
+
 
 
 """
