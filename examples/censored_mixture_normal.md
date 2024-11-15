@@ -1,5 +1,5 @@
 ##  Conditional Gaussian mixtures with a point mass
-This example is similar to the [mixture normal example](./mixture_normal.md) except for that a point mass at -0.5 is introduced by truncating all values below. One way to deal with this to
+This example is similar to the [mixture normal example](./mixture_normal.md) except that a point mass at -0.5 is introduced by truncating all values below. One way to deal with this is to treat -0.5 as left censored values. Here is the code.
 
 ```julia
 using BQNet, Flux, Random, Distributions, Plots
@@ -8,10 +8,10 @@ using BQNet, Flux, Random, Distributions, Plots
 mixture(m, sd) = MixtureModel([Normal(m, sd), Normal(-m, sd)])
 
 #  function for generating data
-function create_data(; n = 50_000, sd = 0.25)
+function create_data(; n = 50_000, sd = 0.25, cens = -0.5)
     x = Float32.(rand(Uniform(-1, 1), n))
     y = map(m -> rand(mixture(m,sd), 1)[1], x)
-    y[y .< -0.5] .= -0.5
+    y[y .< cens] .= cens
     return reshape(x, 1, :), Float32.(y)
 end
 
@@ -53,8 +53,9 @@ fit_qts  = predict(model_fit, xp; prob = prob_out)
 #  plot true and fitted distributions
 plot(u, qts_true', color = :black, linestyle = :dot,
      legend = :top, label = reshape(["true quantiles"; fill("", 9)], 1, 10),
-     title = "Prediction of $(length(prob_out)) quantiles from a censored mixture normal",
+     title = "Prediction of $(length(prob_out)) quantiles from a censored mixture normal with point mass at -0.5",
      xlab = "means of mixture components (±)", ylab = "quantile")
 plot!(u, fit_qts', color = :blue,
       label = reshape(["BQN quantiles"; fill("", 9)], 1, 10))
 ```
+![BQN fit](./mixture_normal/censored_mixture_normal.png)
