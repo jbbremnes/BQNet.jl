@@ -1,17 +1,17 @@
 ##  Conditional Gaussian mixtures
 
-In this demonstration, simulated data from a conditional mixture of two normal distributions is used to train a Bernstein Quantile Network model. The data is generated as follows
+In this demonstration, simulated data from a conditional mixture of two normal distributions is used to train a Bernstein Quantile Network model. The training data is generated as follows
 ```
     μ ~ Uniform(-1, 1)
     Y ~ Normal(μ, 0.25^2)/2 + Normal(-μ, 0.25^2)/2 
 ```   
-Here, μ will serve as the single input feature, while Y is the target variable. The objective is for the Bernstein Quantile Network to learn the underlying distribution of Y conditioned on the input μ.
+Here, μ will serve as the single input feature, while Y is the target variable. Hence, the objective is for the Bernstein Quantile Network to learn the underlying distribution of Y conditioned on the input μ.
 
 
 The Julia code is as follows
 
 ```julia
-using BQNet, Flux, Distributions, Plots
+using BQNet, Flux, Random, Distributions, Plots
 
 #  define mixture model
 mixture(m, sd) = MixtureModel([Normal(m, sd), Normal(-m, sd)])
@@ -24,15 +24,16 @@ function create_data(; n = 50_000, sd = 0.25)
 end
 
 #  create data
-n = 50_000
+Random.seed!(1234)
+n = 20_000
 x, y = create_data(n = n)
 
-#  create data loaders
+#  create data loaders for training and validation
 idx = Int(round(0.9 * n))
 ktr = 1:idx
 kval = idx+1:n
-train_loader = Flux.DataLoader((x[:, ktr], y[ktr]), batchsize = 500,
-                                    shuffle = true, partial = false)
+train_loader = Flux.DataLoader((x[:, ktr], y[ktr]), batchsize = 250,
+                               shuffle = true, partial = false)
 val_loader   = Flux.DataLoader((x[:, kval], y[kval]), batchsize = length(kval))
 
 
@@ -62,6 +63,9 @@ plot(u, qts_true', color = :black, linestyle = :dot,
 plot!(u, fit_qts', color = :blue,
       label = reshape(["BQN quantiles"; fill("", 9)], 1, 10))
 ```
+The code will produce the following plot
+
+![BQN fit](./mixture_normal/mixture_normal.png)
 
 Note that the BQN model has not been tuned. Hence, better fits should be possible by exploring other network configurations and hyper-parameters including the degree of the Bernstein polynomial.
 
