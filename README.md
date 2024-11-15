@@ -1,7 +1,7 @@
 #  BQNet 
 BQNet.jl is a Julia package for distributional regression using Bernstein quantile networks (BQN). That is,
 * the conditional distribution is specified by its quantile function and assumed to be a [Bernstein polynomial](https://en.wikipedia.org/wiki/Bernstein_polynomial) of a certain degree
-* its distribution parameters, the coefficients of the Bernstein polynomial, are linked to the input variables/covariates by a neural network
+* its distribution parameters, the coefficients of the Bernstein polynomial, are linked to the input feature variables by a neural network
 * the model parameters, the weights and biases of the network, are estimated by optimising a composite quantile loss function.
 
 The package is based on [Flux](https://fluxml.ai/).
@@ -20,7 +20,7 @@ add "https://github.com/jbbremnes/BQNet.jl"
 
 ##  Examples
 In the following examples the BQN is applied to various data
-* [Synthetic data from conditional Gaussian mixtures](https://github.com/jbbremnes/BQNet.jl/blob/main/src/examples/mixture_normal.md)
+* [Synthetic data from conditional Gaussian mixtures](./src/examples/mixture_normal.md)
 * ...
 
 ##  Background
