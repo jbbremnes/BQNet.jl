@@ -25,7 +25,7 @@ val_loader   = Flux.DataLoader((x[:, kval], y[kval]), batchsize = length(kval))
 
 #  create and train model
 device = cpu
-degree = 24
+degree = 12
 model  = Chain(Dense(size(x,1), 32, elu),
                Dense(32, 32, elu),
                Dense(32, degree+1), softplus_bqn) |> device
