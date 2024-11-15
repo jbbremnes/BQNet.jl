@@ -58,4 +58,4 @@ plot(u, qts_true', color = :black, linestyle = :dot,
 plot!(u, fit_qts', color = :blue,
       label = reshape(["BQN quantiles"; fill("", 9)], 1, 10))
 ```
-![BQN fit](./mixture_normal/censored_mixture_normal.png)
+![Censored BQN fit](./mixture_normal/censored_mixture_normal.png)
