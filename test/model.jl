@@ -1,5 +1,6 @@
 using Test
 using BQNet
+using Flux
 
 
 @testset "BQN model" begin
@@ -7,7 +8,7 @@ using BQNet
     n = 100
     x = rand(Float32, 10, n)
     y = randn(Float32, n) .+ x[1,:]
-    tr_loader = Flux.DataLoader((x, y), batchsize = 10)
+    tr_loader = Flux.DataLoader((x, y), batchsize = 50)
     degree = 9
     model = Chain(Dense(size(x,1), 32, elu),
                   Dense(32, degree + 1), softplus_bqn)

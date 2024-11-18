@@ -1,7 +1,7 @@
 using BQNet
 using Test
 
-versioninfo()
+#@info sprint versioninfo()
 
 include("loss.jl")
 include("model.jl")
