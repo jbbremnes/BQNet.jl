@@ -78,8 +78,6 @@ BernsteinMatrix(degree::Integer, prob::AbstractVector) =
 #  function for timing
 timeit(tm::DateTime) = Dates.toms(Dates.now() - tm) / 1000
 
-#  activation function for increments
-softplus_increment(x::Matrix) = vcat(x[1:1, :], softplus(x[2:end, :]))
 
 
 #  training loop for censored Bernstein Quantile Networks
@@ -87,9 +85,9 @@ softplus_increment(x::Matrix) = vcat(x[1:1, :], softplus(x[2:end, :]))
     bqn_train!(model, tr_loader, val_loader;
                increments::Bool = true,
                prob::AbstractVector = Float32.(0:0.01:1),
-               censored_left = NaN, censored_prob = false,
-               learning_rate::AbstractFloat = 0.001,
-               learning_rate_scale::AbstractFloat = 0.1,
+               censored_left = NaN, use_censored_prob = true,
+               learning_rate::AbstractFloat = 0.001f0,
+               learning_rate_scale::AbstractFloat = 0.1f0,
                learning_rate_min::AbstractFloat = 5f-6,
                patience::Integer = 10, max_epochs::Integer = 200,
                best_model::Bool = true, device::Function = cpu)
@@ -97,14 +95,14 @@ softplus_increment(x::Matrix) = vcat(x[1:1, :], softplus(x[2:end, :]))
 Training loop for BQN models with early stopping.
 
 Left censoring is possible by specifying `censored_left`. If `censored_prob` is true an
-estimated probability of censoring is applied in the first epoch. 
+estimated probability of censoring based on the targets is applied in the first epoch. 
 
-Note that training batches must be of equal size.
+Note that all training batches must be of equal size.
 """
 function bqn_train!(model, tr_loader, val_loader;
                     increments::Bool = true,
-                    prob::AbstractVector = Float32.(0:0.01:1),
-                    censored_left = NaN, censored_prob = false,
+                    prob::AbstractVector = Float32.(0:0.025:1),
+                    censored_left = NaN, use_censored_prob = true,
                     learning_rate::AbstractFloat = 0.001f0,
                     learning_rate_scale::AbstractFloat = 0.1f0,
                     learning_rate_min::AbstractFloat = 5f-6,
@@ -113,7 +111,8 @@ function bqn_train!(model, tr_loader, val_loader;
     
     prob_tr    = Float32.(prob)
     censored   = isfinite(censored_left) 
-    prob_cens  = censored ? fill(Float32(mean(tr_loader.data[2] .<= censored_left)), tr_loader.batchsize) : 0f0
+    #prob_cens  = censored  ?  fill(Float32(mean(tr_loader.data[2] .<= censored_left)), tr_loader.batchsize)  :  0f0
+    prob_cens  = Float32(mean(tr_loader.data[2] .<= censored_left))
     degree     = size(model(first(tr_loader)[1]))[end-1] - 1  
     B          = BernsteinMatrix(degree, prob_tr)
     if increments
@@ -122,7 +121,7 @@ function bqn_train!(model, tr_loader, val_loader;
     B          = B |> device
     prob_tr    = prob_tr |> device
     mask       = ones(Float32, degree+1, tr_loader.batchsize) |> device   # fixed batchsize assumed!
-    agg        = censored ? u -> sum(u .* mask) / sum(mask)  :  mean
+    agg        = censored  ?  u -> sum(u .* mask) / sum(mask)  :  mean
     loss(m, x, y) = qtloss(B * m(x), y, prob_tr; agg = agg)
     qs_tr      = Float32[]  
     qs_val     = Float32[]  
@@ -135,8 +134,8 @@ function bqn_train!(model, tr_loader, val_loader;
     ictr       = 1
     epochs     = 0
 
-    opt_rule  = OptimiserChain(Adam(learning_rate))
-    opt_state =	Flux.setup(opt_rule, model)
+    opt_rule   = OptimiserChain(Adam(learning_rate))   
+    opt_state  = Flux.setup(opt_rule, model)
     
     tm_total   = Dates.now()
     for i in 1:max_epochs
@@ -147,7 +146,7 @@ function bqn_train!(model, tr_loader, val_loader;
         trloss = 0f0
         for (x, y) in tr_loader
             if censored
-                if i == 1 && censored_prob
+                if i == 1 && use_censored_prob
                     mask = Float32.(prob_cens .> prob_inv)
                 else
                     mask = Float32.((B * model(x))' .> censored_left)
@@ -160,13 +159,13 @@ function bqn_train!(model, tr_loader, val_loader;
         end
         push!(qs_tr, trloss / length(tr_loader))
         push!(tm_tr, timeit(tm))
-        masked[i] = masked[i] / length(tr_loader)  # length(tr_loader.data)
+        masked[i] = masked[i] / length(tr_loader) 
         
         tm      = Dates.now()
         valloss = 0.0f0
         for (x, y) in val_loader
             qt = censored ? max.(censored_left, B*model(x)) : B*model(x)
-            valloss += qtloss(qt, y, prob_tr) 
+            valloss += qtloss(qt, y, prob_tr)
         end
         push!(qs_val, valloss / length(val_loader))
         push!(tm_val, timeit(tm))
@@ -181,10 +180,10 @@ function bqn_train!(model, tr_loader, val_loader;
             if ictr > patience
                 opt_rule[end].eta *= learning_rate_scale   
                 opt_state = Flux.setup(opt_rule, model)
-                lr        = string(opt_rule[end].eta)
-                ictr      = 1
+                lr   = string(opt_rule[end].eta)
+                ictr = 1
             else
-                ictr    += 1
+                ictr += 1
             end
         end
  
@@ -228,7 +227,7 @@ end
 
 Compute the conditional cumulative distribution function of Y|x for values `y` for each `x`
 based on the BQN model `fit`. The CDFs evaluated at `y` are simply obtained by computing the
-proportion of predicted quantiles less or equal to `y`. The size of `prob` determines the
+proportion of predicted quantiles less or equal to `y`. Hence, the size of `prob` determines the
 accuracy of the approximation.
 """
 function cdf(fit::BQNmodel, x, y::AbstractVector;
