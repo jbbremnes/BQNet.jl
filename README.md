@@ -19,8 +19,9 @@ add "https://github.com/jbbremnes/BQNet.jl"
 ```
 
 ##  Examples
-In the following examples the BQN is applied to various data
-* [Synthetic data from conditional Gaussian mixtures](./examples/mixture_normal.md)
+In the following examples the BQN is applied to various datasets
+* [Conditional Gaussian mixtures](./examples/mixture_normal.md)
+* [Censored conditional Gaussian mixtures](./examples/censored_mixture_normal.md)
 * ...
 
 ##  Background
