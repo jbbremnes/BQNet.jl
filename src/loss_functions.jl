@@ -9,7 +9,7 @@ Computes the composite quantile loss for the levels given by `prob`.
  y     observations
  prob  quantile levels/probabilities
  agg   aggregation function with `mean` as default. Other useful functions are `identity`,
-       `u -> sum(w .* u) / sum(w)` (weighted mean), ...
+       `u -> mean(w .* u)` (weighted mean), ...
 ```
 """
 function qtloss(qt::AbstractMatrix, y::AbstractVector, prob::AbstractVector; agg = mean)
