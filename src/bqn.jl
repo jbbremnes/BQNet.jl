@@ -134,14 +134,15 @@ function bqn_train!(model, tr_loader, val_loader;
     ictr       = 1
     epochs     = 0
 
-    opt_rule   = OptimiserChain(Adam(learning_rate))   
+    clr        = learning_rate
+    opt_rule   = OptimiserChain(Adam(clr))   
     opt_state  = Flux.setup(opt_rule, model)
     
     tm_total   = Dates.now()
     for i in 1:max_epochs
 
         epochs += 1
-        push!(lrs, opt_rule[end].eta)
+	push!(lrs, clr)
         tm  = Dates.now()
         trloss = 0f0
         for (x, y) in tr_loader
@@ -178,10 +179,10 @@ function bqn_train!(model, tr_loader, val_loader;
             ictr = 1
         else
             if ictr > patience
-                opt_rule[end].eta *= learning_rate_scale   
-                opt_state = Flux.setup(opt_rule, model)
-                lr   = string(opt_rule[end].eta)
-                ictr = 1
+		clr  *= learning_rate_scale
+                Optimisers.adjust!(opt_state, clr)
+                lr   = string(clr)
+		ictr = 1
             else
                 ictr += 1
             end
