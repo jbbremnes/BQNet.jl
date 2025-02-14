@@ -1,4 +1,4 @@
-using BQNet, Flux, Distributions, Plots
+using BQNet, Flux, MLUtils, Distributions, Plots
 
 #  define mixture model
 mixture(m, sd) = MixtureModel([Normal(m, sd), Normal(-m, sd)])
@@ -18,9 +18,9 @@ x, y = create_data(n = n)
 idx = Int(round(0.9 * n))
 ktr = 1:idx
 kval = idx+1:n
-train_loader = Flux.DataLoader((x[:, ktr], y[ktr]), batchsize = 500,
+train_loader = DataLoader((x[:, ktr], y[ktr]), batchsize = 500,
                                     shuffle = true, partial = false)
-val_loader   = Flux.DataLoader((x[:, kval], y[kval]), batchsize = length(kval))
+val_loader   = DataLoader((x[:, kval], y[kval]), batchsize = length(kval))
 
 
 #  create and train model
