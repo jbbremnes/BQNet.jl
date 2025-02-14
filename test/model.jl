@@ -1,6 +1,6 @@
 using Test
 using BQNet
-using Flux
+using Flux, MLUtils
 
 
 @testset "BQN model" begin
@@ -8,7 +8,7 @@ using Flux
     n = 100
     x = rand(Float32, 10, n)
     y = randn(Float32, n) .+ x[1,:]
-    tr_loader = Flux.DataLoader((x, y), batchsize = 50)
+    tr_loader = DataLoader((x, y), batchsize = 50)
     degree = 9
     model = Chain(Dense(size(x,1), 32, elu),
                   Dense(32, degree + 1), softplus_bqn)
@@ -27,4 +27,6 @@ using Flux
     @test cprob isa Matrix
     @test size(cprob) == (n, 41)
     
-end
+end;
+
+

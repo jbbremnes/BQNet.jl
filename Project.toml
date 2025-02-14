@@ -1,7 +1,7 @@
 name = "BQNet"
 uuid = "88dfb94c-06ac-4c09-bf87-90f2afe7c105"
 authors = ["jbbremnes <j.b.bremnes@met.no>"]
-version = "0.2.1"
+version = "0.2.2"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"

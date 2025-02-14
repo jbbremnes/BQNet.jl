@@ -111,7 +111,6 @@ function bqn_train!(model, tr_loader, val_loader;
     
     prob_tr    = Float32.(prob)
     censored   = isfinite(censored_left) 
-    #prob_cens  = censored  ?  fill(Float32(mean(tr_loader.data[2] .<= censored_left)), tr_loader.batchsize)  :  0f0
     prob_cens  = Float32(mean(tr_loader.data[2] .<= censored_left))
     degree     = size(model(first(tr_loader)[1]))[end-1] - 1  
     B          = BernsteinMatrix(degree, prob_tr)
@@ -192,7 +191,7 @@ function bqn_train!(model, tr_loader, val_loader;
                        i, qs_tr[i], qs_val[i], i == findmin(qs_val)[2] ? "*" : " ",
                        tm_tr[i], tm_val[i],
                        lr == "" ? lr : string("\n      new learning rate: ", lr))
-        if opt_rule[end].eta < learning_rate_min
+        if clr < learning_rate_min
             break
         end
     end
