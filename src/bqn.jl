@@ -1,6 +1,6 @@
 #  Bernstein Quantile Networks with and without censoring
 
-using Flux
+using Flux, Optimisers
 using Statistics, Dates
 using Printf: @sprintf
 using LinearAlgebra: tril
