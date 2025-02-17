@@ -47,7 +47,7 @@ function show(io::IO, fit::BQNmodel)
     println(io, "Non-decreasing Bernstein basis: ", fit.increments)
     println(io, "Left censored value: ", fit.censored_left)
     println(io, "Network: ", fit.model)
-    println(io, "Network/model parameters: ", sum(length, Flux.params(fit.model)))
+    println(io, "Network/model parameters: ", sum(length, Flux.trainables(fit.model)))
     trloss = findmin(fit.training_loss)
     println(io, "Best training loss: ", Float32(trloss[1]), " (epoch ", trloss[2], 
             ", learning rate ", fit.learning_rates[trloss[2]], ")")
