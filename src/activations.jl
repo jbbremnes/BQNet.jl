@@ -9,8 +9,8 @@ softplus_bqn(x) = vcat(x[1:1, :], softplus(x[2:end, :]))
 
 
 
-#  CUDA
-try
+#  CUDA  
+if false
     
     using CUDA, ChainRulesCore
 
@@ -55,10 +55,8 @@ try
         end
         return nothing
     end
-
-catch e
     
-    println("No CUDA")
+    #println("No CUDA")
     
 end
 
