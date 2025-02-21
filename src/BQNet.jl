@@ -13,6 +13,9 @@ include("loss_functions.jl")
 export qtloss
 
 include("layers.jl")
+export Ensemble
+
+include("activations.jl")
 export softplus_bqn
 
 
