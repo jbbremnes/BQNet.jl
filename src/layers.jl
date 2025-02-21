@@ -3,11 +3,6 @@
 #
 
 
-#  softplus activation for BQN models
-#softplus_bqn(x::Matrix) = vcat(x[1:1, :], softplus(x[2:end, :]))
-softplus_bqn(x) = vcat(x[1:1, :], softplus(x[2:end, :]))
-
-
 #  layer for ensemble data of size (features, members, batch)
 #  a shared network is applied separately to each member.
 struct Ensemble{T <: Chain}
