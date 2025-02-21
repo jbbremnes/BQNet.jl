@@ -1,4 +1,4 @@
-#  Bernstein Quantile Networks with and without censoring
+#  Bernstein Quantile Networks with optional censoring
 
 using Flux, Optimisers
 using Statistics, Dates
@@ -84,8 +84,8 @@ timeit(tm::DateTime) = Dates.toms(Dates.now() - tm) / 1000
 """
     bqn_train!(model, tr_loader, val_loader;
                increments::Bool = true,
-               prob::AbstractVector = Float32.(0:0.01:1),
-               censored_left = NaN, use_censored_prob = true,
+               prob::AbstractVector = Float32.(0:0.025:1),
+               censored_left = NaN32, use_censored_prob = true,
                learning_rate::AbstractFloat = 0.001f0,
                learning_rate_scale::AbstractFloat = 0.1f0,
                learning_rate_min::AbstractFloat = 5f-6,
@@ -99,41 +99,41 @@ estimated probability of censoring based on the targets is applied in the first 
 
 Note that all training batches must be of equal size.
 """
-function bqn_train!(model, tr_loader, val_loader;
+function bqn_train2!(model, tr_loader, val_loader;
                     increments::Bool = true,
                     prob::AbstractVector = Float32.(0:0.025:1),
-                    censored_left = NaN, use_censored_prob = true,
+                    censored_left = NaN32, use_censored_prob::Bool = true,
                     learning_rate::AbstractFloat = 0.001f0,
                     learning_rate_scale::AbstractFloat = 0.1f0,
                     learning_rate_min::AbstractFloat = 5f-6,
                     patience::Integer = 10, max_epochs::Integer = 200,
                     best_model::Bool = true, device::Function = cpu)
     
+    model      = model |> device
+    censored   = isfinite(censored_left)
+    prob_cens  = Float32(mean(first(tr_loader)[2] .<= censored_left))    # only based on the first batch!
+    degree     = size(model(first(tr_loader)[1]))[end-1] - 1
     prob_tr    = Float32.(prob)
-    censored   = isfinite(censored_left) 
-    prob_cens  = Float32(mean(tr_loader.data[2] .<= censored_left))
-    degree     = size(model(first(tr_loader)[1]))[end-1] - 1  
     B          = BernsteinMatrix(degree, prob_tr)
     if increments
         B = B * tril(ones(Float32, degree+1, degree+1)) 
     end
     B          = B |> device
     prob_tr    = prob_tr |> device
-    mask       = ones(Float32, degree+1, tr_loader.batchsize) |> device   # fixed batchsize assumed!
+    mask       = ones(Float32, degree+1, tr_loader.batchsize) |> device   # constant batchsize assumed!
     agg        = censored  ?  u -> sum(u .* mask) / sum(mask)  :  mean
-    loss(m, x, y) = qtloss(B * m(x), y, prob_tr; agg = agg)
     qs_tr      = Float32[]  
     qs_val     = Float32[]  
     lrs        = Float32[]
     tm_tr      = Float32[]
     tm_val     = Float32[]
     masked     = zeros(Float32, max_epochs)
-    prob_inv   = 1f0 .- transpose(prob_tr)
+    prob_inv   = 1f0 .- transpose(prob_tr) |> device
     bmodel     = deepcopy(model)
     ictr       = 1
     epochs     = 0
 
-    clr        = learning_rate
+    clr        = Float32(learning_rate)
     opt_rule   = OptimiserChain(Adam(clr))   
     opt_state  = Flux.setup(opt_rule, model)
     
@@ -153,9 +153,11 @@ function bqn_train!(model, tr_loader, val_loader;
                 end                
                 masked[i] += sum(mask)
             end
-            g = Flux.withgradient(m -> loss(m, x, y), model)
-            trloss += g.val
-            Flux.update!(opt_state, model, g.grad[1])
+            batchloss, grads = Flux.withgradient(model) do m
+                qtloss(B * m(x), y, prob_tr; agg = agg)
+            end
+            trloss += batchloss
+            Flux.update!(opt_state, model, grads[1])
         end
         push!(qs_tr, trloss / length(tr_loader))
         push!(tm_tr, timeit(tm))
