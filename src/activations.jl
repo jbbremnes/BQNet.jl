@@ -4,65 +4,63 @@
 #  
 #
 
+using Requires
 
 softplus_bqn(x::Matrix) = vcat(x[1:1, :], softplus(x[2:end, :]))
 
 
 
-#  for CUDA
+#  CUDA
 try
+    
     using CUDA, ChainRulesCore
 
-    if CUDA.has_CUDA()
-        function softplus_bqn_kernel!(y, x)
-            i, j = threadIdx().x + (blockIdx().x - 1) * blockDim().x, threadIdx().y + (blockIdx().y - 1) * blockDim().y
-            if i <= size(x,1) && j <= size(x,2)
-                y[i, j] = (i == 1) ? x[i, j] : softplus(x[i, j])
-            end
-            return nothing
+    function softplus_bqn_kernel!(y, x)
+        i, j = threadIdx().x + (blockIdx().x - 1) * blockDim().x, threadIdx().y + (blockIdx().y - 1) * blockDim().y
+        if i <= size(x,1) && j <= size(x,2)
+            y[i, j] = (i == 1) ? x[i, j] : softplus(x[i, j])
         end
+        return nothing
+    end
+    
+    function softplus_bqn(x::CuArray{Float32, 2})
+        y = similar(x)
+        threads = (16, 16)
+        blocks = cld.(size(x), threads)
+        @cuda threads=threads blocks=blocks softplus_bqn_kernel!(y, x)
+        return y
+    end
+    
+    function ChainRulesCore.rrule(::typeof(softplus_bqn), x::CuArray{Float32, 2})
+        y = softplus_bqn(x)  # Compute forward pass output
         
-        function softplus_bqn(x::CuArray{Float32, 2})
-            y = similar(x)
+        function softplus_bqn_pullback(Δ)
+            grad_x = similar(x)
             threads = (16, 16)
             blocks = cld.(size(x), threads)
-            @cuda threads=threads blocks=blocks softplus_bqn_kernel!(y, x)
-            return y
+            @cuda threads=threads blocks=blocks softplus_bqn_grad_kernel!(grad_x, x, Δ)
+            return (NoTangent(), grad_x)
         end
         
-        function ChainRulesCore.rrule(::typeof(softplus_bqn), x::CuArray{Float32, 2})
-            y = softplus_bqn(x)  # Compute forward pass output
-            
-            function softplus_bqn_pullback(Δ)
-                grad_x = similar(x)
-                threads = (16, 16)
-                blocks = cld.(size(x), threads)
-                @cuda threads=threads blocks=blocks softplus_bqn_grad_kernel!(grad_x, x, Δ)
-                return (NoTangent(), grad_x)
+        return y, softplus_bqn_pullback
+    end
+    
+    function softplus_bqn_grad_kernel!(grad_x, x, Δ)
+        i, j = threadIdx().x + (blockIdx().x - 1) * blockDim().x, threadIdx().y + (blockIdx().y - 1) * blockDim().y
+        if i <= size(x,1) && j <= size(x,2)
+            if i == 1
+                grad_x[i, j] = Δ[i, j]  # Pass-through gradient for first row
+            else
+                grad_x[i, j] = Δ[i, j] * sigmoid(x[i, j])  # Derivative of softplus
             end
-            
-            return y, softplus_bqn_pullback
         end
-        
-        function softplus_bqn_grad_kernel!(grad_x, x, Δ)
-            i, j = threadIdx().x + (blockIdx().x - 1) * blockDim().x, threadIdx().y + (blockIdx().y - 1) * blockDim().y
-            if i <= size(x,1) && j <= size(x,2)
-                if i == 1
-                    grad_x[i, j] = Δ[i, j]  # Pass-through gradient for first row
-                else
-                    grad_x[i, j] = Δ[i, j] * sigmoid(x[i, j])  # Derivative of softplus
-                end
-            end
-            return nothing
-        end
-    else
-        println("No NVIDIA GPU found.")
+        return nothing
     end
 
 catch e
-
-    println("CUDA is not available.")
-
+    
+    println("No CUDA")
+    
 end
 
 
