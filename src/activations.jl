@@ -4,9 +4,8 @@
 #  
 #
 
-using Requires
 
-softplus_bqn(x::Matrix) = vcat(x[1:1, :], softplus(x[2:end, :]))
+softplus_bqn(x) = vcat(x[1:1, :], softplus(x[2:end, :]))
 
 
 
