@@ -99,7 +99,7 @@ estimated probability of censoring based on the targets is applied in the first 
 
 Note that all training batches must be of equal size.
 """
-function bqn_train2!(model, tr_loader, val_loader;
+function bqn_train!(model, tr_loader, val_loader;
                     increments::Bool = true,
                     prob::AbstractVector = Float32.(0:0.025:1),
                     censored_left = NaN32, use_censored_prob::Bool = true,

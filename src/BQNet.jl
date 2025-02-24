@@ -15,7 +15,8 @@ export qtloss
 include("layers.jl")
 export Ensemble
 
-include("activations.jl")
+#include("activations.jl")
+softplus_bqn(x) = vcat(x[1:1, :], softplus(x[2:end, :]))
 export softplus_bqn
 
 
