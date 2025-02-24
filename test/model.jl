@@ -26,6 +26,18 @@ using Flux, MLUtils
     cprob = cdf(bqnmodel, x, -1:0.1:3)
     @test cprob isa Matrix
     @test size(cprob) == (n, 41)
+
+    if false      #  CUDA GPU
+        using CUDA
+        n = 1000
+        x = rand(Float32, 10, n)
+        y = randn(Float32, n) .+ x[1,:]
+        tr_loader = DataLoader((x, y), batchsize = 200) |> gpu
+        degree = 9
+        model = Chain(Dense(size(x,1), 32, elu),
+                      Dense(32, degree + 1), softplus_bqn) |> gpu
+        bqnmodel = bqn_train!(model, tr_loader, tr_loader)
+    end
     
 end;
 
