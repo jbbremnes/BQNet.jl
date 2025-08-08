@@ -6,7 +6,7 @@ using DataFrames, Dates
 using CSV, JLD2
 
 
-#  read MEPS data from CSV file and convert to 5d array
+#  read MEPS data from CSV file and convert to 4d array
 function read_meps(; fname = "./data/meps_statnett.csv")
 
     # read csv file
@@ -41,20 +41,20 @@ function read_meps(; fname = "./data/meps_statnett.csv")
         data[s, :, 1:end-1, l, tr] .= reshape(collect(df[i,5:end]), length(mbrs), length(vars))
         data[s, :, end, l, tr] .= df.lt[i]
     end  
-    append!(vars, "leadtime")
+    push!(vars, "leadtime")
 
     #  reduce to 4d array here!
-    #meps = reshape(meps, size(meps,1), size(meps,2), size(meps,3), :)
+    data = reshape(data, size(data,1), size(data,2), size(data,3), :)
     tm = vec(Hour.(lts) .+ permutedims(time_refs))
     lt = repeat(lts, outer = length(time_refs))
     tmr = repeat(time_refs, inner = length(lts))
     
-    return (data=data, axes=(sites=sites, mbrs=mbrs, vars=vars, lts=lts, time_refs=time_refs)) # fix here!
+    return (data=data, sites=sites, mbrs=mbrs, vars=vars, time_valid=tm, lts=lt, time_refs=tmr) 
 end
+
 
 #  read power production data
 function read_production_data(; fname = "./data/wind_power_per_bidzone.csv")
-
     prod = CSV.read("./data/wind_power_per_bidzone.csv", DataFrame)
     dropmissing!(prod)
     rename!(prod, [:time, :NO1, :NO2, :NO3, :NO4])
@@ -66,7 +66,6 @@ end
 
 #  read capacity information
 function read_capacity_info(; fname = "./data/windparks_bidzone.csv")
-
     capacity = CSV.read(fname, DataFrame)[:, 1:4]  # omit eic code
     unique!(capacity)
     capacity.bidding_area = (u -> u[end-2:end]).(capacity.bidding_area)  # "ELSPOT N0*" -> "NO*"
@@ -78,21 +77,51 @@ end
 
 
 
+#  get capacity vector for given wind parks for each point in time
+function get_capacity_vectors(capacity_df::DataFrame, parks::Vector{String}, tm::Vector{DateTime})
+    out = zeros(Float32, length(parks), length(tm))
+    park_dict = Dict(row.substation_name => 
+        (row.operating_power_max, row.prod_start_new) for row in eachrow(capacity_df))
+    for t in eachindex(tm)
+        for p in eachindex(parks)
+            prod, tm_start = park_dict[parks[p]]
+            if tm[t] >= tm_start
+                out[p, t] = prod
+            end
+        end
+    end
+    return out
+end
+
+
 function main()
 
-    #  read MEPS forecast into 5d array of dimensions: site, member, variable, lt, time_ref
-    @time meps = read_meps()  # ~3 minutes
+    #  read MEPS forecast into 4d array of dimensions: site, member, variable, lt×time_ref
+    @time meps = read_meps();  # ~3 minutes
     
     #  read wind power data
     prod = read_production_data()
+
+    #  align data in time
+    time_common = intersect(meps.time_valid, prod.time)
+    idx_meps = occursin(meps.time_valid, time_common)
+    x = meps.data[:, :, :, idx_meps]
+    x_tm = meps.time_valid[idx_meps]
+
+    idx_prod = occursin(prod.time, time_common)
+    prod = prod[idx.prod, :]
+
+    idx_prod = indexin(prod.time, x_tm)
+    prod = prod[idx_prod, :]
     
     #  read wind park capacity information 
     capacity = read_capacity_info()
-    meps[2].time_refs <
- 
+    @time capacity_vector = get_capacity_vectors(capacity, string.(meps.sites), meps.time_valid)
+
+    
     #  create tuple for each price area, (x = c(fc, cap), y = prod)
-    
-    
+    kt = indexin(meps.axes.time_valid, prod.time)
+    ()
     
     #  save to JLD2
     
