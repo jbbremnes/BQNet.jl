@@ -4,6 +4,7 @@
 
 using DataFrames, Dates
 using CSV, JLD2
+using DimensionalData
 
 
 #  read MEPS data from CSV file and convert to 4d array
@@ -43,13 +44,23 @@ function read_meps(; fname = "./data/meps_statnett.csv")
     end  
     push!(vars, "leadtime")
 
-    #  reduce to 4d array here!
+    if false
+        tm = vec(Hour.(lts) .+ permutedims(time_refs))
+        lt = repeat(lts, outer = length(time_refs))
+        tmr = repeat(time_refs, inner = length(lts))
+        tm_coords = [(time_valid = val, time_ref = ref, leadtime = l) for (val,ref,l) in zip(tm, tmr, lt)]
+        meps = DimArray(reshape(data, size(data,1), size(data,2), size(data,3), :),
+                        (sites, mbrs, vars, tm_coords); refdims = (:site, :member, :variable, :tm))
+    end
+    
+    #  reduce to 4d array
     data = reshape(data, size(data,1), size(data,2), size(data,3), :)
     tm = vec(Hour.(lts) .+ permutedims(time_refs))
     lt = repeat(lts, outer = length(time_refs))
     tmr = repeat(time_refs, inner = length(lts))
     
-    return (data=data, sites=sites, mbrs=mbrs, vars=vars, time_valid=tm, lts=lt, time_refs=tmr) 
+    return (data=data, sites=sites, mbrs=mbrs, vars=vars, time_valid=tm, lts=lt, time_refs=tmr)
+    #return meps
 end
 
 
@@ -104,26 +115,32 @@ function main()
 
     #  align data in time
     time_common = intersect(meps.time_valid, prod.time)
-    idx_meps = occursin(meps.time_valid, time_common)
+    idx_meps = meps.time_valid .∈  Ref(time_common)
     x = meps.data[:, :, :, idx_meps]
-    x_tm = meps.time_valid[idx_meps]
+    x_time_valid = meps.time_valid[idx_meps]
+    x_lt = meps.lts[idx_meps]
 
-    idx_prod = occursin(prod.time, time_common)
+    idx_prod = prod.time .∈ Ref(time_common)
     prod = prod[idx.prod, :]
 
-    idx_prod = indexin(prod.time, x_tm)
-    prod = prod[idx_prod, :]
+    idx_prod = indexin(x_time_valid, prod.time)
+    y = prod[idx_prod, :]
     
     #  read wind park capacity information 
     capacity = read_capacity_info()
-    @time capacity_vector = get_capacity_vectors(capacity, string.(meps.sites), meps.time_valid)
+    sites = String.(meps.sites)
+    @time capacity_vector = get_capacity_vectors(capacity, sites, x_time_valid)
 
-    
-    #  create tuple for each price area, (x = c(fc, cap), y = prod)
-    kt = indexin(meps.axes.time_valid, prod.time)
-    ()
-    
     #  save to JLD2
-    
+    time_meta = DataFrame(time_valid = x_time_valid,
+                          time_ref = x_time_valid .- Hour.(x_lt),
+                          leadtimes = meps.lts[idx_meps])
+    members = meps.mbrs
+    variables = meps.vars
+    JLD2.@save joinpath("data", "windai_4d.jld2") x capacity y sites members variables time_meta
     
 end
+
+
+@time main()
+
