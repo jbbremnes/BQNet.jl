@@ -4,7 +4,7 @@
 
 using DataFrames, Dates
 using CSV, JLD2
-using DimensionalData
+#using DimensionalData
 
 
 #  read MEPS data from CSV file and convert to 4d array
@@ -129,7 +129,7 @@ function main()
     #  read wind park capacity information 
     capacity = read_capacity_info()
     sites = String.(meps.sites)
-    @time capacity_vector = get_capacity_vectors(capacity, sites, x_time_valid)
+    @time capacity = get_capacity_vectors(capacity, sites, x_time_valid)
 
     #  save to JLD2
     time_meta = DataFrame(time_valid = x_time_valid,
